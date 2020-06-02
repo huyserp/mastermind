@@ -35,6 +35,8 @@ class Mastermind < String
         @yellow = "*".yellow
         @pink = "*".pink
 
+        @all_guesses = []
+        @submitted_guess = []
         @choices = [@red, @blue, @green, @yellow, @pink]
         @code = []
     end
@@ -45,6 +47,41 @@ class Mastermind < String
             @code.push(@choices[rand(4)])
         end
        @code.join('   ')
+    end
+
+    def make_guess
+        i = 1
+        while i <= 5
+            puts "choose color # #{i}:"
+            color = gets.chomp.to_s.downcase
+
+            case color
+            when "red"
+                @submitted_guess.push(@red)
+            when "blue"
+                @submitted_guess.push(@blue)
+            when "green"
+                @submitted_guess.push(@green)
+            when "yellow"
+                @submitted_guess.push(@yellow)
+            when "pink"
+                @submitted_guess.push(@pink)
+            else
+                puts "please choose one of five options: red, blue, green, yellow, or pink"
+                redo
+            end
+            i += 1
+        end
+
+        puts @submitted_guess.join('   ')
+    end
+
+    def enter_guess
+        @all_guesses.push(@submitted_guess)
+        @submitted_guess = []
+        @all_guesses.each do |row|
+           puts row.each { |colors| colors }.join('   ')
+        end
     end
 
     def show_code
