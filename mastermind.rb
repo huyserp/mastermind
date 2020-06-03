@@ -24,9 +24,21 @@ class String
     def pink
         colorize(35)
     end
+
+    def bg_blue
+        colorize(44)
+    end
+
+    def bg_green
+        colorize(42)
+    end
+
+
+
 end
 
 class Mastermind < String
+    attr_reader :submitted_guess
 
     def initialize
         @red = "*".red
@@ -34,11 +46,19 @@ class Mastermind < String
         @green = "*".green
         @yellow = "*".yellow
         @pink = "*".pink
+        @color_but_space = "  ".bg_blue
+        @color_and_space = "  ".bg_green
 
+        @code = []
         @all_guesses = []
         @submitted_guess = []
+        @all_clues = []
+        @clue = []
         @choices = [@red, @blue, @green, @yellow, @pink]
-        @code = []
+    end
+
+    def play
+
     end
 
     def cpu_generate_code
@@ -49,7 +69,8 @@ class Mastermind < String
        @code.join('   ')
     end
 
-    def make_guess
+    def pick_colors
+        puts "please choose your code from these five options: red, blue, green, yellow, or pink"
         i = 1
         while i <= 5
             puts "choose color # #{i}:"
@@ -72,7 +93,6 @@ class Mastermind < String
             end
             i += 1
         end
-
         puts @submitted_guess.join('   ')
     end
 
@@ -83,6 +103,32 @@ class Mastermind < String
            puts row.each { |colors| colors }.join('   ')
         end
     end
+
+    def check_code #STILL NEED TO ACCOUNT FOR MULTIPLES OF THE SAME COLOR..... #shift(i)
+        i = 0
+        progressive_code = @code.shift(i)
+        @submitted_guess.each do |my_color|
+            if my_color == @code[i]
+                @clue.push(@color_and_space) 
+            elsif my_color != @code[i] && progressive_code.include?(my_color)
+                @clue.push(@color_but_space) 
+            else
+                @clue.push(" ")
+            end
+                i += 1
+        end
+    end
+
+
+    def give_clues
+        puts @clue.join('   ')
+    end
+
+    def check_and_show
+        check_code
+        give_clues
+    end
+
 
     def show_code
         @code.join('   ')
