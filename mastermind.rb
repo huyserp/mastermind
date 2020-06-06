@@ -5,6 +5,10 @@ class String
         "\e[#{color_code}m#{self}\e[0m"
     end
 
+    def bold
+        "\e[1m#{self}\e[22m"
+    end
+
     def red
         colorize(31)
     end
@@ -41,11 +45,11 @@ class Mastermind < String
     attr_reader :submitted_guess
 
     def initialize
-        @red = "*".red
-        @blue = "*".blue
-        @green = "*".green
-        @yellow = "*".yellow
-        @pink = "*".pink
+        @red = "*".red.bold
+        @blue = "*".blue.bold
+        @green = "*".green.bold
+        @yellow = "*".yellow.bold
+        @pink = "*".pink.bold
         @color_but_space = "  ".bg_blue
         @color_and_space = "  ".bg_green
 
@@ -53,7 +57,7 @@ class Mastermind < String
         @all_guesses = []
         @submitted_guess = []
         @all_clues = []
-        @clue = []
+        @clue = [' ', ' ', ' ', ' ', ' ']
         @choices = [@red, @blue, @green, @yellow, @pink]
     end
 
@@ -62,19 +66,19 @@ class Mastermind < String
     end
 
     def cpu_generate_code
-        @code = []
         5.times do
-            @code.push(@choices[rand(4)])
+            @code.push(@choices[rand(5)])
         end
        @code.join('   ')
     end
 
     def pick_colors
-        puts "please choose your code from these five options: red, blue, green, yellow, or pink"
+        puts "please choose from these five options: red, blue, green, yellow, or pink"
         i = 1
         while i <= 5
             puts "choose color # #{i}:"
             color = gets.chomp.to_s.downcase
+            print "\e[A\e[2K" * 2
 
             case color
             when "red"
@@ -93,50 +97,61 @@ class Mastermind < String
             end
             i += 1
         end
-        puts @submitted_guess.join('   ')
+    end
+
+    def check_code
+        code_color_count = {}
+        @code.each do |color|
+            code_color_count[color] = @code.count(color)
+        end
+
+        @submitted_guess.each_with_index do |my_color, index|
+            if my_color == @code[index]
+                @clue[index] = @color_and_space
+                code_color_count[my_color] -= 1
+                code_color_count.select! { |key, value| value > 0 }
+            end
+        end
+
+        @submitted_guess.each_with_index do |my_color, index|
+            if @clue[index] == " " && code_color_count.keys.include?(my_color)
+                @clue[index] = @color_but_space
+                code_color_count[my_color] -= 1
+                code_color_count.select! { |key, value| value > 0 }
+            end
+        end
     end
 
     def enter_guess
-        @all_guesses.push(@submitted_guess)
-        @submitted_guess = []
+        @submitted_guess = "#{@submitted_guess.join('   ')}     | #{@clue.join(' | ')} |"
+        @all_guesses << @submitted_guess
         @all_guesses.each do |row|
-           puts row.each { |colors| colors }.join('   ')
+           puts puts row
         end
     end
 
-    def check_code #STILL NEED TO ACCOUNT FOR MULTIPLES OF THE SAME COLOR..... #shift(i)
-        i = 0
-        progressive_code = @code.shift(i)
-        @submitted_guess.each do |my_color|
-            if my_color == @code[i]
-                @clue.push(@color_and_space) 
-            elsif my_color != @code[i] && progressive_code.include?(my_color)
-                @clue.push(@color_but_space) 
-            else
-                @clue.push(" ")
-            end
-                i += 1
-        end
+    def clear
+        @submitted_guess = []
+        @clue = [" ", " ", " ", " ", " "]
     end
 
-
-    def give_clues
-        puts @clue.join('   ')
-    end
-
-    def check_and_show
+    def check_enter_clear
         check_code
-        give_clues
+        enter_guess
+        clear
     end
-
 
     def show_code
-        @code.join('   ')
+       puts @code.join('   ')
     end
 
-    def show_choices
-       @choices.join('   ')
+    def show_board
     end
+
+
+    # def show_choices
+    #    @choices.join('   ')
+    # end
 
 end
 
@@ -144,3 +159,4 @@ end
 
 
 
+# print "\e[A\e[2K"
