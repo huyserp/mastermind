@@ -1,59 +1,22 @@
 require 'pry'
 
-class String
-    def colorize(color_code)
-        "\e[#{color_code}m#{self}\e[0m"
-    end
-
-    def red
-        colorize(31)
-    end
-
-    def blue
-        colorize(34)
-    end
-
-    def green
-        colorize(32)
-    end
-
-    def yellow
-        colorize(33)
-    end
-
-    def pink
-        colorize(35)
-    end
-
-    def bg_blue
-        colorize(44)
-    end
-
-    def bg_green
-        colorize(42)
-    end
-
-    def bold
-        "\e[1m#{self}\e[22m"
-    end
-end
-
-class Mastermind < String
+class Mastermind
     attr_accessor :turn_count
 
     def initialize
-        @red = "*".red.bold
-        @blue = "*".blue.bold
-        @green = "*".green.bold
-        @yellow = "*".yellow.bold
-        @pink = "*".pink.bold
-        @color_but_space = "  ".bg_blue
-        @color_and_space = "  ".bg_green
+        @red = "\e[1m\e[31m*\e[0m\e[22m"
+        @blue = "\e[1m\e[34m*\e[0m\e[22m"
+        @green = "\e[1m\e[32m*\e[0m\e[22m"
+        @yellow = "\e[1m\e[33m*\e[0m\e[22m"
+        @pink = "\e[1m\e[35m*\e[0m\e[22m"
+        @color_but_space = "\e[1m\e[44m  \e[0m\e[22m"
+        @color_and_space = "\e[1m\e[42m  \e[0m\e[22m"
 
+        @gap = "  "
         @code = []
         @guess_list = []
         @submitted_guess = []
-        @clue = ['  ', '  ', '  ', '  ', '  ']
+        @clue = Array.new(5, @gap)
         @choices = [@red, @blue, @green, @yellow, @pink]
         @turn_count = 1
         @winning_statement = [
@@ -69,27 +32,7 @@ class Mastermind < String
         puts "Would you like to 'SET' the code or 'GUESS' the code?"
         game_type = gets.chomp.upcase
         if game_type == "GUESS"
-            cpu_generate_code
-            puts "The code has been set."
-            sleep 0.5
-            while game_over? == false
-                sleep 1.5
-                pick_colors
-                check_enter_clear
-                self.turn_count += 1
-            end
-            puts @winning_statement.shuffle.first
-            puts "the code was:"
-            show_code
-            sleep 2
-            puts "Want to play again? yes/no"
-            play_again = gets.chomp.downcase
-            if play_again == "yes"
-                initialize
-                self.play
-            else
-                puts("Goodbye!")
-            end
+           human_play
         elsif game_type == "SET"
             puts "functionality coming soon... :)"
             sleep 1
@@ -103,15 +46,45 @@ class Mastermind < String
 
     private
 
+    def human_play
+        cpu_generate_code
+        puts "The code has been set."
+        sleep 0.5
+        while game_over? == false
+            sleep 1.5
+            user_pick_colors
+            check_enter_clear
+            self.turn_count += 1
+        end
+
+        puts @winning_statement.shuffle.first
+        puts "the code was:"
+        show_code
+        sleep 2
+
+        puts "Want to play again? yes/no"
+        play_again = gets.chomp.downcase
+        if play_again == "yes"
+            initialize
+            self.play
+        else
+            puts("Goodbye!")
+        end
+    end
+
+    def cpu_play
+    end
+
     def cpu_generate_code
         5.times do
             @code.push(@choices[rand(5)])
         end
-       @code.join('   ')
+       @code.join("#{@gap} ")
     end
 
-    def pick_colors
-        puts "please choose from these five options: red, blue, green, yellow, or pink"
+    def user_pick_colors
+        instruct = "please choose one of five options: red, blue, green, yellow, or pink"
+        puts instruct
         i = 1
         while i <= 5
             puts "choose color # #{i}:"
@@ -130,11 +103,14 @@ class Mastermind < String
             when "pink"
                 @submitted_guess.push(@pink)
             else
-                puts "please choose one of five options: red, blue, green, yellow, or pink"
+                puts instruct
                 redo
             end
             i += 1
         end
+    end
+
+    def cpu_pick_colors
     end
 
     def check_code
@@ -154,7 +130,7 @@ class Mastermind < String
 
         #### SET THE BLUES AFTER ####
         @submitted_guess.each_with_index do |my_color, index|
-            if @clue[index] == "  " && code_color_count.keys.include?(my_color)
+            if @clue[index] == @gap && code_color_count.keys.include?(my_color)
                 @clue[index] = @color_but_space
                 code_color_count[my_color] -= 1
                 code_color_count.select! { |key, value| value > 0 }
@@ -163,7 +139,7 @@ class Mastermind < String
     end
 
     def enter_guess
-        guess = "#{self.turn_count}. #{@submitted_guess.join('   ')}     | #{@clue.join(' | ')} |"
+        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}     | #{@clue.join(' | ')} |"
         @guess_list << guess
         @guess_list.each do |row|
            puts puts row
@@ -177,7 +153,7 @@ class Mastermind < String
     def clear
         if game_over? == false
             @submitted_guess = []
-            @clue = ["  ", "  ", "  ", "  ", "  "]
+            @clue = Array.new(5, @gap)
         end
     end
 
@@ -188,7 +164,7 @@ class Mastermind < String
     end
 
     def show_code
-       puts @code.join('   ')
+       puts @code.join("#{@gap} ")
     end
 end
 
