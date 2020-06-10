@@ -114,25 +114,30 @@ class Mastermind
     end
 
 
-    #### WHEN THE USER DOESN'T FOLLOW THE CODE, IT STILL TAKES FROM CODE_COLOR_COUNT #### => TEST THIS!!!!
     def check_code
         code_color_count = {}
-        @code.each { |color| code_color_count[color] = @code.count(color) }
+        @code.each do |color|
+            code_color_count[color] = @code.count(color)
+        end
         
+        #### SET THE GREENS FIRST ####
         @submitted_guess.each_with_index do |my_color, index|
             if my_color == @code[index]
                 @clue[index] = @color_and_space
                 code_color_count[my_color] -= 1
-            elsif @clue[index] == @gap && code_color_count.keys.include?(my_color)
+                code_color_count.select! { |key, value| value > 0 }
+            end
+        end
+
+        #### SET THE BLUES AFTER ####
+        @submitted_guess.each_with_index do |my_color, index|
+            if @clue[index] == @gap && code_color_count.keys.include?(my_color)
                 @clue[index] = @color_but_space
                 code_color_count[my_color] -= 1
-            else
-                next
+                code_color_count.select! { |key, value| value > 0 }
             end
-            code_color_count.select! { |key, value| value > 0 }
         end
     end
-    ####################################################################################################
     
     def enter_guess
         guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}     | #{@clue.join(' | ')} |"
