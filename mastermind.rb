@@ -26,17 +26,16 @@ class Mastermind
             "You're not as dumb as you look.",
             "Maybe try a harder difficulty? just sayin..."
         ]
+        @start_phrase = "The code has been set."
     end
 
     def play
         puts "Would you like to 'SET' the code or 'GUESS' the code?"
         game_type = gets.chomp.upcase
         if game_type == "GUESS"
-           human_play
+            human_play
         elsif game_type == "SET"
-            puts "functionality coming soon... :)"
-            sleep 1
-            self.play
+            cpu_play
         else
             puts "yeah, ok... SET or GUESS?"
             sleep 1
@@ -48,7 +47,7 @@ class Mastermind
 
     def human_play
         cpu_generate_code
-        puts "The code has been set."
+        puts @start_phrase
         sleep 0.5
         while game_over? == false
             sleep 1.5
@@ -68,12 +67,20 @@ class Mastermind
             initialize
             self.play
         else
-            puts("Goodbye!")
+            puts "Goodbye!"
         end
     end
 
     def cpu_play
+        @code = user_pick_colors
+        @submitted_guess = []
+        puts @start_phrase
+        sleep 1
+        cpu_pick_colors
+
+
     end
+
 
     def cpu_generate_code
         5.times do
@@ -108,13 +115,52 @@ class Mastermind
             end
             i += 1
         end
+        @submitted_guess
     end
 
     def cpu_pick_colors
+        i = 1
+        if i == 1
+            5.times do
+                @submitted_guess.push(@choices[rand(5)])
+            end
+        else
+            # Look at the clue and only fill the indexes that are not green those that are 
+            # green use the same color in that index
+            # if blue clue use those colors first, but put them in different indexes
+            # if a color is matched with @gap in the clue, don't use that color anymore, unless
+            # there is a green clue for said color.
+
+    end
+
+    def human_check_code
+        instruct = ["Please place put 'GREEN' if the color is correct and in the correct spot.",
+        "'BLUE' if the color is in the code, but not in its current position",
+        "'WRONG' if the color is not in the code"]
+        puts instruct
+        i = 1
+        while i <= 5
+            clue = gets.chomp.downcase
+            print "\e[A\e[2K" * 2
+
+            case clue
+            when "green"
+                @clue << @color_and_space
+            when "blue"
+                @clue << @color_but_space
+            when "wrong"
+                @clue << @gap
+            else
+                puts instruct
+                redo
+            end
+            i += 1
+        end
+        @clue
     end
 
 
-    def check_code
+    def cpu_check_code
         code_color_count = {}
         @code.each do |color|
             code_color_count[color] = @code.count(color)
@@ -159,7 +205,7 @@ class Mastermind
     end
 
     def check_enter_clear
-        check_code
+        cpu_check_code
         enter_guess
         clear
     end
