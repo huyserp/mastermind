@@ -1,5 +1,7 @@
 require 'pry'
 
+## THINK ABOUT SERIALIZING EACH MATCH - COULD LOOK UP HISTORY?
+
 class Mastermind
     attr_accessor :turn_count
 
@@ -15,6 +17,7 @@ class Mastermind
         @gap = "  "
         @code = []
         @guess_list = []
+        @display_list = [@gap]
         @submitted_guess = []
         @clue = Array.new(5, @gap)
         @choices = [@red, @blue, @green, @yellow, @pink]
@@ -43,7 +46,11 @@ class Mastermind
         end
     end
 
-    private
+    #private
+
+    ######################################################################
+    ##### HUMAN PLAY - CPU SETS CODE, HUMAN GUESSES, CPU GIVES CLUES #####
+    ######################################################################
 
     def human_play
         cpu_generate_code
@@ -52,13 +59,14 @@ class Mastermind
         while game_over? == false
             sleep 1.5
             user_pick_colors
-            check_enter_clear
+            check_clue_clear
             self.turn_count += 1
         end
 
         puts @winning_statement.shuffle.first
         puts "the code was:"
         show_code
+        binding.pry
         sleep 2
 
         puts "Want to play again? yes/no"
@@ -71,21 +79,8 @@ class Mastermind
         end
     end
 
-    def cpu_play
-        @code = user_pick_colors
-        @submitted_guess = []
-        puts @start_phrase
-        sleep 1
-        cpu_pick_colors
-
-
-    end
-
-
     def cpu_generate_code
-        5.times do
-            @code.push(@choices[rand(5)])
-        end
+       @code = generate_five_random
        @code.join("#{@gap} ")
     end
 
@@ -96,19 +91,29 @@ class Mastermind
         while i <= 5
             puts "choose color # #{i}:"
             color = gets.chomp.to_s.downcase
-            print "\e[A\e[2K" * 2
-
+            clear_line(2)
+            
             case color
             when "red"
                 @submitted_guess.push(@red)
+                clear_line(2) if i != 1
+                enter_guess
             when "blue"
                 @submitted_guess.push(@blue)
+                clear_line(2) if i != 1
+                enter_guess
             when "green"
                 @submitted_guess.push(@green)
+                clear_line(2) if i != 1
+                enter_guess
             when "yellow"
                 @submitted_guess.push(@yellow)
+                clear_line(2) if i != 1
+                enter_guess
             when "pink"
                 @submitted_guess.push(@pink)
+                clear_line(2) if i != 1
+                enter_guess
             else
                 puts instruct
                 redo
@@ -117,48 +122,6 @@ class Mastermind
         end
         @submitted_guess
     end
-
-    def cpu_pick_colors
-        i = 1
-        if i == 1
-            5.times do
-                @submitted_guess.push(@choices[rand(5)])
-            end
-        else
-            # Look at the clue and only fill the indexes that are not green those that are 
-            # green use the same color in that index
-            # if blue clue use those colors first, but put them in different indexes
-            # if a color is matched with @gap in the clue, don't use that color anymore, unless
-            # there is a green clue for said color.
-
-    end
-
-    def human_check_code
-        instruct = ["Please place put 'GREEN' if the color is correct and in the correct spot.",
-        "'BLUE' if the color is in the code, but not in its current position",
-        "'WRONG' if the color is not in the code"]
-        puts instruct
-        i = 1
-        while i <= 5
-            clue = gets.chomp.downcase
-            print "\e[A\e[2K" * 2
-
-            case clue
-            when "green"
-                @clue << @color_and_space
-            when "blue"
-                @clue << @color_but_space
-            when "wrong"
-                @clue << @gap
-            else
-                puts instruct
-                redo
-            end
-            i += 1
-        end
-        @clue
-    end
-
 
     def cpu_check_code
         code_color_count = {}
@@ -184,14 +147,105 @@ class Mastermind
             end
         end
     end
+
+    #########################################################################
+    ##### CPU PLAY - USER SETS CODE, COMPUTER GUESSES, USER GIVES CLUES #####
+    #########################################################################
+    def cpu_play
+        human_set_code
+        @submitted_guess = []
+        puts @start_phrase
+        sleep 1
+        cpu_pick_colors
+
+
+    end
+
+    def human_set_code
+        instruct = "please choose one of five options: red, blue, green, yellow, or pink"
+        puts instruct
+        i = 1
+        while i <= 5
+            puts "choose color # #{i}:"
+            color = gets.chomp.to_s.downcase
+            clear_line(2)
+
+            case color
+            when "red"
+                @code.push(@red)
+            when "blue"
+                @code.push(@blue)
+            when "green"
+                @code.push(@green)
+            when "yellow"
+                @code.push(@yellow)
+            when "pink"
+                @code.push(@pink)
+            else
+                puts instruct
+                redo
+            end
+            i += 1
+        end
+
+    end
+
+    def cpu_pick_colors
+        if @turn_count == 1 || @clue.all?(@gap)
+            generate_five_random
+        end
+            # Look at the clue and only fill the indexes that are not green those that are 
+            # green use the same color in that index
+            # if blue clue use those colors first, but put them in different indexes
+            # if a color is matched with @gap in the clue, don't use that color anymore, unless
+            # there is a green clue for said color.
+        
+
+    end
+
+    def human_check_code
+        instruct = ["Please place put 'GREEN' if the color is correct and in the correct spot.",
+        "'BLUE' if the color is in the code, but not in its current position",
+        "'WRONG' if the color is not in the code"]
+        puts instruct
+        i = 1
+        while i <= 5
+            clue = gets.chomp.downcase
+            clear_line(2)
+
+            case clue
+            when "green"
+                @clue << @color_and_space
+            when "blue"
+                @clue << @color_but_space
+            when "wrong"
+                @clue << @gap
+            else
+                puts instruct
+                redo
+            end
+            i += 1
+        end
+        @clue
+    end
     
     def enter_guess
-        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}     | #{@clue.join(' | ')} |"
-        @guess_list << guess
-        @guess_list.each do |row|
-           puts puts row
-        end
+        @guess_list << @submitted_guess
+        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}"
+        display_turn(guess)
     end
+
+    def enter_clue
+        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}     | #{@clue.join(' | ')} |"
+        if self.turn_count == 1 
+            clear_line(3)
+            puts
+        else
+            clear_line(3)
+        end
+        display_turn(guess)
+    end
+
 
     def game_over?
         @submitted_guess == @code ? true : false
@@ -201,18 +255,37 @@ class Mastermind
         if game_over? == false
             @submitted_guess = []
             @clue = Array.new(5, @gap)
+            @guess_list << @gap
         end
     end
 
-    def check_enter_clear
+    def check_clue_clear
         cpu_check_code
-        enter_guess
+        enter_clue
         clear
     end
 
     def show_code
        puts @code.join("#{@gap} ")
     end
+    
+    def clear_line(number_of_lines)
+        print "\e[A\e[2K" * number_of_lines
+    end
+
+    def generate_five_random
+        five_colors = []
+        5.times do
+            five_colors.push(@choices[rand(5)])
+        end
+        five_colors
+    end
+
+    def display_turn(guess)
+        @display_list[self.turn_count - 1] = guess
+        puts puts @display_list.last
+    end
+
 end
 
 game = Mastermind.new
