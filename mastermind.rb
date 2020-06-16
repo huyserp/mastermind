@@ -18,7 +18,6 @@ class Mastermind
         @choices = [@red, @blue, @green, @yellow, @pink]
         @code = []
         @turn_count = 1
-        @game_type = " "
         @start_phrase = "The code has been set."
         @instruct = "please choose one of five options: red, blue, green, yellow, or pink"
 
@@ -29,6 +28,65 @@ class Mastermind
         @clue_list = []
 
         @display_list = [@gap]
+    end
+
+    def enter_guess
+        @guess_list << @submitted_guess
+        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}"
+        display_turn(guess)
+    end
+
+    def enter_clue
+        @clue_list << @clue
+        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}     | #{@clue.join(' | ')} |"
+        
+        if self.turn_count == 1 
+            clear_line(3)
+            puts
+        else
+            clear_line(3)
+        end
+
+        display_turn(guess)
+    end
+
+    def game_over?
+        @submitted_guess == @code ? true : false
+    end
+
+    def clear
+        if game_over? == false
+            @submitted_guess = []
+            @clue = Array.new(5, @gap)
+            @guess_list << @gap
+        end
+    end
+
+    def show_code
+       puts "The Code: #{@code.join("#{@gap} ")}"
+    end
+    
+    def clear_line(number_of_lines)
+        print "\e[A\e[2K" * number_of_lines
+    end
+
+    def generate_five_random
+        five_colors = []
+        5.times do
+            five_colors.push(@choices[rand(5)])
+        end
+        return five_colors
+    end
+
+    def display_turn(guess)
+        @display_list[self.turn_count - 1] = guess
+        puts puts @display_list.last
+    end
+end
+
+class MastermindHuman << Mastermind
+    def initialize
+        super
         @winning_statement = [
             "Congrats, you did it! You're pretty smart.",
             "Wow, how did you do that so fast? It only took you #{self.turn_count} tries!}",
@@ -37,30 +95,8 @@ class Mastermind
             "Maybe try a harder difficulty? just sayin..."
         ]
     end
-
+    
     def play
-        puts "Would you like to 'SET' the code or 'GUESS' the code?"
-        game_type = gets.chomp.upcase
-        if game_type == "GUESS"
-            @game_type = "human"
-            human_play
-        elsif game_type == "SET"
-            @game_type = "cpu"
-            cpu_play
-        else
-            puts "yeah, ok... SET or GUESS?"
-            sleep 1
-            self.play
-        end
-    end
-
-    #private
-
-    ######################################################################
-    ##### HUMAN PLAY - CPU SETS CODE, HUMAN GUESSES, CPU GIVES CLUES #####
-    ######################################################################
-
-    def human_play
         cpu_generate_code
         puts @start_phrase
         sleep 0.5
@@ -70,7 +106,6 @@ class Mastermind
             check_clue_clear
             self.turn_count += 1
         end
-
         puts @winning_statement.shuffle.first
         puts "the code was:"
         show_code
@@ -87,11 +122,11 @@ class Mastermind
     end
 
     def cpu_generate_code
-       @code = generate_five_random
-       @code.join("#{@gap} ")
+        @code = generate_five_random
+        @code.join("#{@gap} ")
     end
 
-    def user_pick_colors
+    def pick_colors
         puts @instruct
         i = 1
         while i <= 5
@@ -154,10 +189,29 @@ class Mastermind
         end
     end
 
-    #########################################################################
-    ##### CPU PLAY - USER SETS CODE, COMPUTER GUESSES, USER GIVES CLUES #####
-    #########################################################################
-    def cpu_play
+    def check_clue_clear
+        cpu_check_code
+        enter_clue
+        clear
+    end
+
+
+end
+
+class MastermindCpu << Mastermind
+    def initialize
+        super
+        @clue = []
+        @winning_statement = [
+            "You're not even making me work...",
+            "WOW... it only took me #{self.turn_count} tries!",
+            "OK, ok, why don't you give someone else a turn hotshot...",
+            "Good code... tricky... you almost had me.",
+            "Maybe try a harder difficulty? just sayin..."
+        ]
+    end
+
+    def play
         human_set_code
         @submitted_guess = []
         puts @start_phrase
@@ -280,73 +334,22 @@ class Mastermind
         @clue
     end
 
-    #################################################
-    ##### BELOW METHODS USED IN BOTH GAME TYPES #####
-    #################################################
-    def enter_guess
-        @guess_list << @submitted_guess
-        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}"
-        display_turn(guess)
-    end
-
-    def enter_clue
-        @clue_list << @clue
-        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}     | #{@clue.join(' | ')} |"
-        
-        if self.turn_count == 1 
-            clear_line(3)
-            puts
-        else
-            clear_line(3)
-        end
-
-        display_turn(guess)
-    end
-
-
-    def game_over?
-        @submitted_guess == @code ? true : false
-    end
-
-    def cpu_clear
+    def clear
         if game_over? == false
-            @submitted_guess = []
-            @clue = Array.new(5, @gap)
-            @guess_list << @gap
+            super
+            @clue = []
         end
-    end
-
-    def check_clue_clear
-        cpu_check_code
-        enter_clue
-        cpu_clear
-    end
-
-    def show_code
-       puts "The Code: #{@code.join("#{@gap} ")}"
-    end
-    
-    def clear_line(number_of_lines)
-        print "\e[A\e[2K" * number_of_lines
-    end
-
-    def generate_five_random
-        five_colors = []
-        5.times do
-            five_colors.push(@choices[rand(5)])
-        end
-        return five_colors
     end
 
     def display_turn(guess)
         @display_list[self.turn_count - 1] = guess
-        if self.turn_count == 1 && @game_type == "cpu"
+        if self.turn_count == 1
             show_code
         end
         puts puts @display_list.last
     end
-
 end
+
 
 # game = Mastermind.new
 # game.play
