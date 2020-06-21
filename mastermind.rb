@@ -271,10 +271,8 @@ class MastermindCpu < Mastermind
            @submitted_guess = generate_five_random
         else
             cpu_pick_green
-            binding.pry
             cpu_pick_blues
-            # cpu_pick_gap
-            
+            cpu_pick_gap
         end
         @submitted_guess
     end
@@ -296,39 +294,48 @@ class MastermindCpu < Mastermind
         return if @clue.none?(@color_but_space)
 
         blue_colors = []
-        
+
         @clue.each_with_index do |clue, index|
             if clue == @color_but_space
                 blue_colors << @guess_list.last[index]
             end
         end
-        binding.pry
 
-        indexes = [0, 1, 2, 3, 4]
-
-        @submitted_guess.each_with_index do |position, index|
-            if position != @gap
-                indexes.delete(index)
-            end
-        end
-        
-        binding.pry
 
         blue_colors.each do |color|
+            indexes = [0, 1, 2, 3, 4]
+            @submitted_guess.each_with_index do |position, index|
+                if position != @gap
+                    indexes.delete(index)
+                end
+            end
+
             @guess_list.each do |guess|
                 guess.each_with_index do |choice, index|
-                    if choice == color
+                    working_color = ""
+                    if choice == color && blue_colors.count(color) == 1
                         indexes.delete(index)
+                    elsif choice == color && blue_colors.count(color) > 1 && working_color != color
+                        indexes.delete(index)
+                        working_color = color
+                    elsif choice == color && choice == working_color
+                        next
                     else
                         next
                     end
+                    working_color = ""
                 end
             end
-            binding.pry
+            
             new_spot = indexes.first
-            binding.pry
             @submitted_guess[new_spot] = color
-            binding.pry
+            @clue.each_with_index do |clue, index|
+                if clue == @color_but_space && index == @guess_list.last.index(color)
+                    indexes << index
+                else
+                    next
+                end
+            end
         end
         @submitted_guess
     end
@@ -346,16 +353,14 @@ class MastermindCpu < Mastermind
                no_use << @guess_list.last[index]
             end
         end
-        binding.pry
         working_colors = @choices - no_use
-        binding.pry
-        @submitted_guess.map! do |position|
-            if position != @gap
-                next
-            else
-                position = working_colors[rand(working_colors.length + 1)]
+        
+        @submitted_guess.each_with_index do |position, index|
+            if position == @gap
+                @submitted_guess[index] = working_colors[rand(working_colors.length)]
             end
         end
+        @submitted_guess
     end
 
     def human_check_code
@@ -399,7 +404,7 @@ class MastermindCpu < Mastermind
             show_code
             puts
         end
-        puts puts @display_list.last
+        puts @display_list.last
     end
 end
 
