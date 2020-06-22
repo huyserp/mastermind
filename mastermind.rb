@@ -418,15 +418,6 @@ class MastermindCpu < Mastermind
         
         display_turn(guess)
     end
-
-    # def display_turn(guess)
-    #     @display_list[self.turn_count - 1] = guess
-    #     if self.turn_count == 1
-    #         show_code
-    #         puts
-    #     end
-    #     puts @display_list.last
-    # end
 end
 
 human_play = MastermindHuman.new
@@ -448,7 +439,3 @@ while play_again == "yes"
     play_again = gets.chomp.downcase
 end
 puts "Goodbye!"
-
-
-
-# print "\e[A\e[2K"
