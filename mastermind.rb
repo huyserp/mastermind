@@ -118,7 +118,7 @@ class MastermindHuman < Mastermind
         super
         @winning_statement = [
             "Congrats, you did it! You're pretty smart.",
-            "Wow, how did you do that so fast? It only took you #{self.turn_count} tries!}",
+            "Wow, how did you do that so fast?",
             "OK, ok, why don't you give someone else a turn hotshot...",
             "You're not as dumb as you look.",
             "Maybe try a harder difficulty? just sayin..."
@@ -136,18 +136,8 @@ class MastermindHuman < Mastermind
             self.turn_count += 1
         end
         puts @winning_statement.shuffle.first
-        puts "the code was:"
         show_code
         sleep 2
-
-        puts "Want to play again? yes/no"
-        play_again = gets.chomp.downcase
-        if play_again == "yes"
-            initialize
-            self.play
-        else
-            puts "Goodbye!"
-        end
     end
 
     def cpu_generate_code
@@ -185,7 +175,7 @@ class MastermindHuman < Mastermind
                 clear_line(2) if i != 1
                 enter_guess
             else
-                puts instruct
+                puts @instruct
                 redo
             end
             i += 1
@@ -233,27 +223,32 @@ class MastermindCpu < Mastermind
         @clue = []
         @winning_statement = [
             "You're not even making me work...",
-            "WOW... it only took me #{self.turn_count} tries!",
+            "WOW... I'm good!",
             "OK, ok, why don't you give someone else a turn hotshot...",
             "Good code... tricky... you almost had me.",
             "Maybe try a harder difficulty? just sayin..."
         ]
+        @no_use_colors = []
     end
 
     def play
         human_set_code
         puts @start_phrase
+        show_code
+        puts
 
         while game_over? == false
-            sleep 1
+            sleep 1.5
             @submitted_guess = Array.new(5, @gap)
             cpu_pick_colors
             enter_guess
             human_check_code
+            clear_line(2)
             enter_clue
             self.turn_count += 1
         end
-
+        puts @winning_statement.shuffle.first
+        sleep 2
     end
 
     def human_set_code
@@ -262,11 +257,16 @@ class MastermindCpu < Mastermind
     end
 
     def cpu_pick_colors
-        # Look at the clue and only fill the indexes that are not green those that are 
-        # green use the same color in that index
-        # if blue clue use those colors first, but put them in different indexes
-        # if a color is matched with @gap in the clue, don't use that color anymore, unless
-        # there is a green clue for said color.
+        # If its the frist guess, or there were no clues given, randomly select 5 new clues
+
+        # Look at the clue and only fill the indexes that are not green. Those that are green, use the same color in 
+        # @guess_list.last that matches the index of @clue where the green clue was placed.
+
+        # if a blue clue is given use those colors next, but put them in different indexes
+
+        # if a color is matched with @gap in the clue, don't use that color anymore, 
+        # unless there is a green clue for said color.
+
         if @turn_count == 1 || @clue.all?(@gap)
            @submitted_guess = generate_five_random
         else
@@ -278,8 +278,9 @@ class MastermindCpu < Mastermind
     end
 
     def cpu_pick_green
-        #if the clue_list.last has a green square then place the same color in the 
-        #corresponding index of the last_guess in the current (working) submitted_guess.
+        #if the clue has a green square then place the same color from guess_list.last in @submitted_guess which corresponds
+        #to the index of @clue where the green square was place.
+
         if @clue.any?(@color_and_space)
            @clue.each_with_index do |clue, index|
                 if clue == @color_and_space
@@ -293,16 +294,18 @@ class MastermindCpu < Mastermind
     def cpu_pick_blues
         return if @clue.none?(@color_but_space)
 
+        # loop though @clue and store all the colors identified in the guess_list.last as the right color but wrong position
         blue_colors = []
-
         @clue.each_with_index do |clue, index|
             if clue == @color_but_space
                 blue_colors << @guess_list.last[index]
             end
         end
 
-
+        # loop through all the colors that are in the code, but in the wrong place
         blue_colors.each do |color|
+            #becuse the colors identified by the @color_and_space are already in place, we dont want to write over these
+            #remove those indexes as possible positions to place the next "blue_color" clues.
             indexes = [0, 1, 2, 3, 4]
             @submitted_guess.each_with_index do |position, index|
                 if position != @gap
@@ -310,12 +313,16 @@ class MastermindCpu < Mastermind
                 end
             end
 
+            #look through all guess history
             @guess_list.each do |guess|
+                #look at each choice within each guess
                 guess.each_with_index do |choice, index|
+                    #if the "blue_color" we are looking to place right now has alredy been in this index position, take 
+                    #away the option to put it here again, remove the index from the list of possible indexes
                     working_color = ""
                     if choice == color && blue_colors.count(color) == 1
                         indexes.delete(index)
-                    elsif choice == color && blue_colors.count(color) > 1 && working_color != color
+                    elsif choice == color && blue_colors.count(color) > 1 && working_color != color #this needs tweeking
                         indexes.delete(index)
                         working_color = color
                     elsif choice == color && choice == working_color
@@ -327,6 +334,9 @@ class MastermindCpu < Mastermind
                 end
             end
             
+            #look though the options of index positions in which we can put one of our "blue colors" and place it.
+            #after the color has been placed, we need to add its old index position back into the option set for other colors
+            #to be placed there
             new_spot = indexes.first
             @submitted_guess[new_spot] = color
             @clue.each_with_index do |clue, index|
@@ -341,10 +351,10 @@ class MastermindCpu < Mastermind
     end
 
     def cpu_pick_gap
-        #look though the clue - any @gaps in the clue mean the color is not used
+        #look though the clue - any @gaps in the clue mean the color is not used (unless it has already been marked @color_and_space)
         #take the color from the corresponding index in the latest guess and add it to the "no_use" list
         #take these colors away from the working_colors list. fill in the @gap's in the current (working)
-        #submitted guess with random colors from working_colors
+        #submitted guess with random colors from working_colors (so as not to repeat unnecessary colors)
         no_use = []
         @clue.each_with_index do |position, index|
             if position != @gap
@@ -353,8 +363,11 @@ class MastermindCpu < Mastermind
                no_use << @guess_list.last[index]
             end
         end
-        working_colors = @choices - no_use
-        
+
+        @no_use_colors + no_use
+        @no_use_colors.uniq!
+        working_colors = @choices - @no_use_colors #this considers not only the new colors identified as "wrong" but also from all guesses previous.
+
         @submitted_guess.each_with_index do |position, index|
             if position == @gap
                 @submitted_guess[index] = working_colors[rand(working_colors.length)]
@@ -364,7 +377,7 @@ class MastermindCpu < Mastermind
     end
 
     def human_check_code
-        instruct = ["Please place put 'GREEN' if the color is correct and in the correct spot.",
+        instruct = ["Please put 'GREEN' if the color is correct and in the correct spot.",
         "'BLUE' if the color is in the code, but not in its current position",
         "'WRONG' if the color is not in the code"]
         puts instruct
@@ -383,7 +396,7 @@ class MastermindCpu < Mastermind
             when "wrong"
                 @clue << @gap
             else
-                puts instruct
+                puts @instruct
                 redo
             end
             i += 1
@@ -398,28 +411,43 @@ class MastermindCpu < Mastermind
         end
     end
 
-    def display_turn(guess)
-        @display_list[self.turn_count - 1] = guess
-        if self.turn_count == 1
-            show_code
-            puts
-        end
-        puts @display_list.last
+    def enter_clue
+        @clue_list << @clue
+        guess = "#{self.turn_count}. #{@submitted_guess.join("#{@gap} ")}     | #{@clue.join(' | ')} |"
+        clear_line(3)
+        
+        display_turn(guess)
     end
+
+    # def display_turn(guess)
+    #     @display_list[self.turn_count - 1] = guess
+    #     if self.turn_count == 1
+    #         show_code
+    #         puts
+    #     end
+    #     puts @display_list.last
+    # end
 end
 
-# human_play = MastermindHuman.new
-# computer_play = MastermindCpu.new
+human_play = MastermindHuman.new
+computer_play = MastermindCpu.new
 
-# puts "Would you like to 'SET' or 'GUESS' the code?"
-# response = gets.chomp.downcase
-# if response == "guess"
-#     human_play.play
-# elsif response == "set"
-#     computer_play.play
-# else
-#     puts "No, you have to pick one: guess or set?"
-# end
+play_again = "yes"
+while play_again == "yes"
+    puts "Would you like to 'SET' or 'GUESS' the code?"
+    response = gets.chomp.downcase
+    if response == "guess"
+        human_play.play
+    elsif response == "set"
+        computer_play.play
+    else
+        puts "No, you have to pick one: guess or set?"
+    end
+
+    puts "Want to play again? yes/no"
+    play_again = gets.chomp.downcase
+end
+puts "Goodbye!"
 
 
 
