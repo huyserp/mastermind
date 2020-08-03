@@ -1,11 +1,4 @@
-Assignment 1
-Build a tic-tac-toe game on the command line where two human players can play against each other and the board is displayed in between turns.
-
-Think about how you would set up the different elements within the game… What should be a class? Instance variable? Method? A few minutes of thought can save you from wasting an hour of coding.
-Build your game, taking care to not share information between classes any more than you have to.
-
-
-Assignment 2
+Assignment
 Build a Mastermind game from the command line where you have 12 turns to guess the secret code, starting with you guessing the computer’s random code.
 
 Think about how you would set this problem up!
